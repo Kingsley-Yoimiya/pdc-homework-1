@@ -1,10 +1,10 @@
 all: build run
 
 build:
-	nvcc -o main main.cu reduction.cu
+	nvcc -arch=compute_80 -code=sm_80 -o main.exe main.cu reduction.cu
 
 run:
-	./main
+	./main.exe
 
 clean:
-	rm -f main
+	rm -f main.exe

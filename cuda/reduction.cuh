@@ -8,7 +8,11 @@ const int NUM_REPS = 100;   // Number of repetitions for timing
 const int VEC_LEN = 1024 * 1024 * 32;  // 32M elements
 const int MEM_SIZE = VEC_LEN * sizeof(int);
 const int NAIVE_BLOCK_DIM = 8;
+const int OPTIM_HANDLE_NUM = 4;
+const int OPTIM_BLOCK_SIZE = 1024;
+const int WARP_SIZE = 32;
 
+// #define DEBUG
 inline cudaError_t checkCuda(cudaError_t result) {
 #if defined(DEBUG) || defined(_DEBUG)
     if (result != cudaSuccess) {
@@ -41,6 +45,6 @@ inline void postProcess(const int *ref, const int *res, float duration) {
 __global__ void reductionNaive(int *output, const int *input, const int length);
 
 // Your kernel declarations go here
-// __global__ void reductionOptimized(int *output, const int *input, const int length);
+__global__ void reductionOptimized(int *output, const int *input, const int length);
 
 #endif  // REDUCTION_CUH

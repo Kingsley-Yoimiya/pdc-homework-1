@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     // Warmup run to avoid startup timing artifacts
     checkCuda(cudaMemset(d_output, 0, sizeof(int)));  // Clear output
     reductionNaive<<<dimGridNaive, dimBlockNaive>>>(d_output, d_input, VEC_LEN);
+    checkCuda(cudaGetLastError());
 
     // Time the kernel execution
     checkCuda(cudaEventRecord(startEvent, 0));  // Start timer
@@ -59,6 +60,32 @@ int main(int argc, char **argv) {
     // Your optimized kernel calls go here
 
     printf("================================================================\n");
+
+    printf("%30s%30s\n", "Routine", "Reduction time (ms)");
+
+    /* Benchmark optimized reduction kernel */
+    printf("%30s", "Optimized reduction");
+    dim3 dimBlockOptimized(OPTIM_BLOCK_SIZE);
+    dim3 dimGridOptimized(1024);
+    
+    // Warmup run to avoid startup timing artifacts
+    checkCuda(cudaMemset(d_output, 0, sizeof(int)));  // Clear output
+    reductionOptimized<<<dimBlockOptimized, dimGridOptimized>>>(d_output, d_input, VEC_LEN);
+    checkCuda(cudaGetLastError());
+    
+    // Time the kernel execution
+    checkCuda(cudaEventRecord(startEvent, 0));  // Start timer
+    for (int i = 0; i < NUM_REPS; i++) {
+        checkCuda(cudaMemset(d_output, 0, sizeof(int)));  // Reset output
+        reductionOptimized<<<dimBlockOptimized, dimGridOptimized>>>(d_output, d_input, VEC_LEN);
+    }
+    checkCuda(cudaEventRecord(stopEvent, 0));  // Stop timer
+    checkCuda(cudaEventSynchronize(stopEvent));  // Wait for stop event
+    checkCuda(cudaEventElapsedTime(&duration, startEvent, stopEvent));  // Get duration
+    
+    // Copy result back to host and verify
+    checkCuda(cudaMemcpy(&h_output, d_output, sizeof(int), cudaMemcpyDeviceToHost));
+    postProcess(&gold, &h_output, duration / NUM_REPS);  // Compare with CPU result
 
     // Clean up allocated resources
     free(h_input);
